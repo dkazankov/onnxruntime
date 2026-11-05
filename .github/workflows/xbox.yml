@@ -1,0 +1,29 @@
+name: xbox_release_debuginfo
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build_xbox_release_debuginfo:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.1.0
+        
+      - name: Install Windows SDK
+        uses: Lamparter/Install-WindowsSdk@v1.0.0
+        with:
+          buildNumber: 19041
+
+      - name: Python Dependency Installation
+        uses: py-actions/py-dependency-install@v4
+    
+      - name: Build and Test
+        shell: C:\\Windows\\System32\\cmd.exe /d /c
+        run: .\\build.bat --update --build --config RelWithDebInfo --build_shared_lib --cmake_generator 'Visual Studio 18 2026' --use_vcpkg --skip_submodule_sync --skip_pip_install --skip_tests --use_gdk --use_dml --dml_path C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.19041.0\\um --enable_msvc_static_runtime --client_package_build --enable_wcos --enable_dx_interop
+
+    env:
+      OrtPackageId: Microsoft.ML.OnnxRuntime
+      OnnxRuntimeBuildDirectory: ${{ github.workspace }}\build
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 'true'
