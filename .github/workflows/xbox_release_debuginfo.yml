@@ -14,9 +14,27 @@ jobs:
       - name: Install GDK for Windows 10
         shell: pwsh
         run: |
-          winget install --id Microsoft.Gaming.GDK --exact --source winget --silent `
-            --accept-package-agreements --accept-source-agreements --disable-interactivity
-          if ($LASTEXITCODE -ne 0) { throw "GDK installation failed: $LASTEXITCODE" }
+          $release = Invoke-RestMethod -Uri "https://api.github.com/repos/microsoft/GDK/releases/latest"
+          $asset = $release.assets | Where-Object { $_.name -match '^GDK_.*\.zip$' } | Select-Object -First 1
+          if (-not $asset) { throw "No GDK ZIP found in the latest Microsoft/GDK release." }
+
+          $downloadDir = Join-Path $env:RUNNER_TEMP "gdk"
+          $archive = Join-Path $downloadDir $asset.name
+          $extractDir = Join-Path $downloadDir "extracted"
+          New-Item -ItemType Directory -Force -Path $extractDir | Out-Null
+
+          Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $archive
+          Expand-Archive -LiteralPath $archive -DestinationPath $extractDir -Force
+
+          $installer = Get-ChildItem -Path $extractDir -Filter "PGDK.exe" -File -Recurse |
+            Select-Object -First 1
+          if (-not $installer) { throw "PGDK.exe was not found in the GDK archive." }
+
+          $process = Start-Process -FilePath $installer.FullName `
+            -ArgumentList "/quiet", "/norestart" -Wait -PassThru
+          if ($process.ExitCode -notin @(0, 3010)) {
+            throw "GDK installation failed with exit code $($process.ExitCode)."
+          }
           
       - name: Python Dependency Installation
         shell: cmd
