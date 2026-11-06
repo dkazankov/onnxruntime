@@ -1,4 +1,4 @@
-name: xbox_release_debuginfo
+name: XBOX X/S Release with DebugInfo build
 
 on:
   workflow_dispatch:
@@ -19,7 +19,7 @@ jobs:
       - name: Python Dependency Installation
         uses: py-actions/py-dependency-install@v4
     
-      - name: Build and Test
+      - name: Build
         shell: C:\\Windows\\System32\\cmd.exe /d /c
         run: .\\build.bat --update --build --config RelWithDebInfo --build_shared_lib --cmake_generator 'Visual Studio 18 2026' --use_vcpkg --skip_submodule_sync --skip_pip_install --skip_tests --use_gdk --use_dml --dml_path C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.19041.0\\um --enable_msvc_static_runtime --client_package_build --enable_wcos --enable_dx_interop
 
