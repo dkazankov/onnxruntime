@@ -5,17 +5,12 @@ on:
 
 jobs:
   build_xbox_release_debuginfo:
-    runs-on: windows-latest
+    runs-on: windows-2022
 
     steps:
       - name: Checkout
         uses: actions/checkout@v6.1.0
         
-      - name: Install Windows SDK
-        uses: Lamparter/Install-WindowsSdk@v1.0.0
-        with:
-          buildNumber: 19041
-
       - name: Install GDK for Windows 10
         shell: pwsh
         run: |
@@ -24,11 +19,37 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "GDK installation failed: $LASTEXITCODE" }
           
       - name: Python Dependency Installation
-        uses: py-actions/py-dependency-install@v4
+        shell: cmd
+        run: python -m pip install -r "${{ github.workspace }}\tools\ci_build\github\windows\python\requirements.txt"
     
+      - name: Locate vcvarsall and Setup Env
+        uses: ./.github/actions/locate-vcvarsall-and-setup-env
+        with:
+          architecture: x64
+
+      - name: Setup VCPKG Cache
+        uses: ./.github/actions/setup-vcpkg-cache
+        with:
+          key: xbox-build-relwithdebinfo
+          path: ${{ runner.temp }}/vcpkg-binary-cache
+
       - name: Build
-        shell: C:\\Windows\\System32\\cmd.exe /d /c
-        run: .\\build.bat --update --build --config RelWithDebInfo --build_shared_lib --cmake_generator 'Visual Studio 18 2026' --use_vcpkg --skip_submodule_sync --skip_pip_install --skip_tests --use_gdk --use_dml --dml_path C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.19041.0\\um --enable_msvc_static_runtime --client_package_build --enable_wcos --enable_dx_interop
+        shell: cmd
+        run: |
+          .\build.bat --update --build `
+            --config RelWithDebInfo `
+            --build_dir "${{ github.workspace }}\build"
+            --build_shared_lib `
+            --cmake_generator "Visual Studio 17 2022" `
+            --use_vcpkg --use_vcpkg_ms_internal_asset_cache `
+            --skip_submodule_sync --skip_pip_install --skip_tests `
+            --use_gdk `
+            --use_dml --dml_path "C:\Program Files (x86)\Windows Kits\10\Include\10.0.19041.0\um" `
+            --enable_wcos `
+            --enable_dx_interop `
+            --enable_msvc_static_runtime `
+            --client_package_build `
+            --disable_memleak_checker
 
     env:
       OrtPackageId: Microsoft.ML.OnnxRuntime
