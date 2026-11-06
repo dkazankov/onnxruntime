@@ -16,6 +16,13 @@ jobs:
         with:
           buildNumber: 19041
 
+      - name: Install GDK for Windows 10
+        shell: pwsh
+        run: |
+          winget install --id Microsoft.Gaming.GDK --exact --source winget --silent `
+            --accept-package-agreements --accept-source-agreements --disable-interactivity
+          if ($LASTEXITCODE -ne 0) { throw "GDK installation failed: $LASTEXITCODE" }
+          
       - name: Python Dependency Installation
         uses: py-actions/py-dependency-install@v4
     
